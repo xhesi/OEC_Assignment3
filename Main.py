@@ -1,13 +1,13 @@
 from HeartBeat import HeartBeat
 import NetworkInfo
-from collections import Counter
 
-#input_dict = {'A': [45, None], 'B': [45, None], 'C': [45, 1966]}
-
-#value, count = Counter([row[1] for row in input_dict.values()]).most_common(2)
-#print(value)
-#exit()
 current_hostname, current_ip, current_broadcast = NetworkInfo.get_network_info()
+
+print("Using setting:",
+    "\nip=", current_ip,
+    "\nbroadcast=", current_broadcast,
+    "\nport=50002"
+      )
 
 x = HeartBeat(
     name=current_hostname,
