@@ -1,18 +1,18 @@
 from HeartBeat import HeartBeat
-import threading
-import time
+import NetworkInfo
 
+current_ip, current_broadcast = NetworkInfo.get_network_info()
 
 x = HeartBeat(
-    name = "Me",
-    ip='127.0.0.1',
-    broadcast='127.0.0.1',
+    name="Me PC",
+    ip=current_ip,
+    broadcast=current_broadcast,
     port=50001,
     heartbeat_interval=2,
     ttl=10
 )
+print("Starting Node ...")
 x.start_receiving()
-print("hi")
 x.start_sending()
 input('Press enter to manually add node named TestNode:')
 x.add_node("TestNode")

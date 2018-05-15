@@ -15,7 +15,7 @@ class HeartBeat():
 
         # Socket initialisation
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.serversocket.bind((self.broadcast, self.port))
+        self.serversocket.bind((self.ip, self.port))
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.receiveThread = None
         self.sendThread = None
