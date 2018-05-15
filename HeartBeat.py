@@ -88,9 +88,7 @@ class HeartBeat():
     def get_oldest_node(self):
         oldest_node = None;
         for node_key, node_value in self.nodes.items():
-            if node_key == self.name:
-                oldest_node = [node_key, 0]
-            elif oldest_node is None:
+            if oldest_node is None:
                 oldest_node = [node_key, node_value[2]]
             elif node_value[2] > oldest_node[1]:
                 oldest_node = [node_key, node_value[2]]

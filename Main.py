@@ -15,7 +15,7 @@ x = HeartBeat(
     broadcast=current_broadcast,
     port=50002,
     heartbeat_interval=2,
-    ttl=10
+    ttl=2
 )
 print("Starting Node ...")
 x.start_receiving()
