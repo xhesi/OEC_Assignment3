@@ -4,6 +4,7 @@ import platform
 import ipaddress
 
 def get_network_info():
+    hostname = socket.gethostname()
     current_platform = platform.system()
     ip = socket.gethostbyname(socket.gethostname())
     if current_platform == 'Windows':
@@ -24,6 +25,6 @@ def get_network_info():
         mask = line.rstrip().split(b':')[-1].replace(b' ', b'').decode()
     broadcast = str(ipaddress.IPv4Network(ip + '/' + mask, False).broadcast_address)
 
-    return ip, broadcast
+    return hostname, ip, broadcast
 
 

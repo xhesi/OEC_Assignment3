@@ -1,7 +1,7 @@
 import socket
 import threading
 import time
-
+from collections import Counter
 
 class HeartBeat():
 
@@ -25,8 +25,10 @@ class HeartBeat():
         self.heartbeat_interval = heartbeat_interval
         self.name = name
         self.ttl = ttl
+        self.master = self.name
         # Lists
-        self.nodes = {self.name: [True, 0]}
+        # Status, ttl, time-alive, master-election
+        self.nodes = {self.name: [True, 0, 0, self.name]}
 
     def stop(self):
         self.running = False
@@ -39,14 +41,18 @@ class HeartBeat():
     def send(self):
         while self.running:
             try:
-                message = self.name
+                message = self.name + "," + self.get_oldest_node()
+                print(message)
                 self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
+                self.elect_master()
                 print(self.nodes)
-            except:
+                print(self.master)
+            except Exception as e:
                 pass
+               # print(e)
 
     def start_receiving(self):
         self.receiveThread = threading.Thread(target=self.receive)
@@ -66,23 +72,48 @@ class HeartBeat():
                 pass
 
     def parse_data(self, data):
-        self.nodes[data] = [True, 0]
+        data_list=data.split(",")
+        if data_list[0] in self.nodes:
+            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, data_list[1]]
+        else:
+            self.nodes[data_list[0]] = [True, 0, 0, data_list[1]]
 
     def increment_ttl(self):
         for node_key, node_value in self.nodes.items():
             node_value[1] = node_value[1]+1
             if node_value[1] > self.ttl:
                 node_value[0] = False
+                node_value[2] = 0
+                node_value[3] = None
 
-    def add_node(self,name):
+    def get_oldest_node(self):
+        oldest_node = None;
+        for node_key, node_value in self.nodes.items():
+            print(node_key)
+            if node_key == self.name:
+                oldest_node = [node_key, 0]
+            elif oldest_node is None:
+                oldest_node = [node_key, node_value[2]]
+            elif node_value[2] > oldest_node[1]:
+                oldest_node = [node_key, node_value[2]]
+        return oldest_node[0]
+
+    def elect_master(self):
+        value, count = Counter([row[3] for row in self.nodes.values()]).most_common(2)
+        if value[0] is None:
+            self.master = value[1];
+        else:
+            self.master = value[0];
+
+    def add_node(self, name):
         if name in self.nodes:
             print("The selected node already exists");
             return False
         else:
-            self.nodes[name] = [True, self.ttl+1]
+            self.nodes[name] = [False, self.ttl+1, 0, None]
             return True
 
-    def remove_node(self,name):
+    def remove_node(self, name):
         if name in self.nodes:
             del self.nodes[name]
             return True
