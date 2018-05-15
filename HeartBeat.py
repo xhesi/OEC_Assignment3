@@ -42,7 +42,7 @@ class HeartBeat():
         while self.running:
             try:
                 message = self.name + "," + self.get_oldest_node()
-                print(message)
+
                 self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
@@ -51,8 +51,7 @@ class HeartBeat():
                 print(self.nodes)
                 print(self.master)
             except Exception as e:
-                pass
-               # print(e)
+                print(e)
 
     def start_receiving(self):
         self.receiveThread = threading.Thread(target=self.receive)
@@ -89,7 +88,6 @@ class HeartBeat():
     def get_oldest_node(self):
         oldest_node = None;
         for node_key, node_value in self.nodes.items():
-            print(node_key)
             if node_key == self.name:
                 oldest_node = [node_key, 0]
             elif oldest_node is None:
@@ -99,11 +97,13 @@ class HeartBeat():
         return oldest_node[0]
 
     def elect_master(self):
-        value, count = Counter([row[3] for row in self.nodes.values()]).most_common(2)
-        if value[0] is None:
-            self.master = value[1];
-        else:
-            self.master = value[0];
+        if len(self.nodes) > 1:
+            value, count = Counter([row[3] for row in self.nodes.values()]).most_common(2)
+            if value[0] is None:
+                self.master = value[1];
+            else:
+                self.master = value[0];
+
 
     def add_node(self, name):
         if name in self.nodes:
