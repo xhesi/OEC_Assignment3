@@ -26,9 +26,10 @@ class HeartBeat():
         self.name = name
         self.ttl = ttl
         self.master = self.name
+        self.nomination = self.name
         # Lists
-        # Status, ttl, time-alive, master-election
-        self.nodes = {self.name: [True, 0, 0, self.name]}
+        # Status, ttl, time-alive, nomination, master-election
+        self.nodes = {self.name: [True, 0, 0, self.nomination, self.master]}
 
     def stop(self):
         self.running = False
@@ -41,12 +42,13 @@ class HeartBeat():
     def send(self):
         while self.running:
             try:
-                message = self.name + "," + self.get_oldest_node()
-
+                self.nominate()
+                message = self.name + "," + self.get_oldest_node() + "," + self.nomination
                 self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
+
                 self.elect_master()
                 print(self.nodes)
                 print(self.master)
@@ -73,9 +75,9 @@ class HeartBeat():
     def parse_data(self, data):
         data_list=data.split(",")
         if data_list[0] in self.nodes:
-            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, data_list[1]]
+            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, data_list[1], data_list[2]]
         else:
-            self.nodes[data_list[0]] = [True, 0, 0, data_list[1]]
+            self.nodes[data_list[0]] = [True, 0, 0, data_list[1], data_list[2]]
 
     def increment_ttl(self):
         for node_key, node_value in self.nodes.items():
@@ -94,9 +96,17 @@ class HeartBeat():
                 oldest_node = [node_key, node_value[2]]
         return oldest_node[0]
 
-    def elect_master(self):
+    def nominate(self):
         if len(self.nodes) > 1:
             value, count = Counter([row[3] for row in self.nodes.values()]).most_common(2)
+            if value[0] is None:
+                self.nomination = value[1];
+            else:
+                self.nomination = value[0];
+
+    def elect_master(self):
+        if len(self.nodes) > 1:
+            value, count = Counter([row[4] for row in self.nodes.values()]).most_common(2)
             if value[0] is None:
                 self.master = value[1];
             else:
@@ -108,7 +118,7 @@ class HeartBeat():
             print("The selected node already exists");
             return False
         else:
-            self.nodes[name] = [False, self.ttl+1, 0, None]
+            self.nodes[name] = [False, self.ttl+1, 0, None, None]
             return True
 
     def remove_node(self, name):
