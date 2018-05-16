@@ -5,7 +5,7 @@ from collections import Counter
 
 class HeartBeat():
 
-    def __init__(self, name, ip='127.0.0.1', broadcast='127.0.0.1', port=50007, heartbeat_interval=10, ttl=10):
+    def __init__(self, name, ip='127.0.0.1', broadcast='255.255.255.255', port=50007, heartbeat_interval=10, ttl=10, test=False):
         threading.Thread.__init__(self)
         # Networking parameters
         self.ip = ip
@@ -17,6 +17,7 @@ class HeartBeat():
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.serversocket.bind((self.ip, self.port))
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.clientsocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.receiveThread = None
         self.sendThread = None
         self.running = True
@@ -27,6 +28,7 @@ class HeartBeat():
         self.ttl = ttl
         self.master = self.name
         self.nomination = self.name
+        self.test = test
         # Lists
         # Status, ttl, time-alive, nomination, master-election
         self.nodes = {self.name: [True, 0, 0, self.nomination, self.master]}
@@ -45,6 +47,11 @@ class HeartBeat():
                 self.nominate()
                 message = self.name + "," + self.get_oldest_node() + "," + self.nomination
                 self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
+                if self.test:
+                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50001))
+                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50002))
+                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50003))
+                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50004))
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
@@ -88,29 +95,33 @@ class HeartBeat():
                 node_value[3] = None
 
     def get_oldest_node(self):
-        oldest_node = None;
+        oldest_node = [self.name, 0];
         for node_key, node_value in self.nodes.items():
-            if oldest_node is None:
-                oldest_node = [node_key, node_value[2]]
+            if node_key == self.name:
+                continue
             elif node_value[2] > oldest_node[1]:
                 oldest_node = [node_key, node_value[2]]
         return oldest_node[0]
 
     def nominate(self):
-        if len(self.nodes) > 1:
-            value, count = Counter([row[3] for row in self.nodes.values()]).most_common(2)
-            if value[0] is None:
-                self.nomination = value[1];
+        if len(self.nodes) > 2:
+            value = Counter([row[3] for row in self.nodes.values()][1:]).most_common(1)
+            if value[0][0] is None:
+                self.nomination = self.name;
             else:
-                self.nomination = value[0];
+                self.nomination = value[0][0];
+        elif len(self.nodes) == 2:
+                tmp = list(self.nodes.values())[1][3]
+                if tmp is not None:
+                    self.nomination = tmp
+                else:
+                    self.nomination = self.name
 
     def elect_master(self):
         if len(self.nodes) > 1:
-            value, count = Counter([row[4] for row in self.nodes.values()]).most_common(2)
-            if value[0] is None:
-                self.master = value[1];
-            else:
-                self.master = value[0];
+            value = Counter([row[4] for row in self.nodes.values()]).most_common(1)
+            if value[0][0] is not None:
+                self.master = value[0][0];
 
 
     def add_node(self, name):
