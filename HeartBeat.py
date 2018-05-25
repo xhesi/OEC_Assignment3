@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import platform
 from collections import Counter
 
 class HeartBeat():
@@ -11,11 +12,15 @@ class HeartBeat():
         self.ip = ip
         self.port = port
         self.broadcast = broadcast
+        self.current_platform = platform.system()
 
 
         # Socket initialisation
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.serversocket.bind((self.ip, self.port))
+        if self.current_platform == 'Windows':
+            self.serversocket.bind((self.ip, self.port))
+        elif self.current_platform == 'Linux':
+            self.serversocket.bind(("", self.port))
 
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.clientsocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -46,7 +51,11 @@ class HeartBeat():
         while self.running:
             try:
                 message = self.name + "," + str(self.get_age())
-                self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
+                if self.current_platform == 'Windows':
+                    self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
+                elif self.current_platform == 'Linux':
+                    self.clientsocket.sendto(message.encode(), ("", self.port))
+
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
