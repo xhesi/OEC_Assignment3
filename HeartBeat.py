@@ -41,29 +41,32 @@ class HeartBeat():
 
     def stop(self):
         self.running = False
-        self.clientsocket.shutdown(socket.SHUT_WR)
-        self.serversocket.shutdown(socket.SHUT_WR)
         print('Exiting Program...')
-        self.serversocket.close()
-        self.clientsocket.close()
+        self.clientsocket.sendto('exit'.encode(), (self.broadcast, self.port))
+        try:
+#            self.clientsocket.shutdown(socket.SHUT_WR)
+            self.clientsocket.close()
+        except Exception as e:
+                print("Client Socket: " + str(e))
+        try:
+#            self.serversocket.shutdown(socket.SHUT_WR)
+            self.serversocket.close()
+        except Exception as e:
+                print("Server Socket:" + str(e))
 
     def send(self):
         while self.running:
             try:
                 message = self.name + "," + str(self.get_age())
-                if self.current_platform == 'Windows':
-                    self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
-                elif self.current_platform == 'Linux':
-                    self.clientsocket.sendto(message.encode(), ("", self.port))
+                self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
 
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
                 self.master = self.get_oldest_node()
-                print(self.nodes)
-                print(self.master)
+                self.print_status()
             except Exception as e:
-                print(e)
+                print("Socket Client Send" + str(e))
                 self.stop()
 
     def start_receiving(self):
@@ -79,9 +82,14 @@ class HeartBeat():
             try:
                 data, addr = self.serversocket.recvfrom(1024)  # buffer size is 1024 bytes
                 #print("received message:", data, " from : ", addr[0])
-                threading.Thread(target=self.parse_data, args=(data.decode("utf-8"),)).start()
+                if data.decode("utf-8") != 'exit':
+                    threading.Thread(target=self.parse_data, args=(data.decode("utf-8"),)).start()
             except:
                 pass
+
+    def print_status(self):
+        print(self.nodes)
+        print(self.master)
 
     def get_age(self):
         return self.nodes[self.name][2]
@@ -89,8 +97,7 @@ class HeartBeat():
     def parse_data(self, data):
         data_list = data.split(",")
         if data_list[0] in self.nodes:
-            self.nodes[data_list[0]] = [True, 0, int(self.nodes[data_list[0]][2])+1, int(self.nodes[data_list[0]][2])]
-            print("test")
+            self.nodes[data_list[0]] = [True, 0, int(self.nodes[data_list[0]][2])+1, int(data_list[1])]
         else:
             self.nodes[data_list[0]] = [True, 0, 0, int(data_list[1])]
 
