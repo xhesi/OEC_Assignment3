@@ -16,6 +16,7 @@ class HeartBeat():
         # Socket initialisation
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.serversocket.bind((self.ip, self.port))
+
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.clientsocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.receiveThread = None
@@ -79,10 +80,10 @@ class HeartBeat():
     def parse_data(self, data):
         data_list = data.split(",")
         if data_list[0] in self.nodes:
-            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, self.nodes[data_list[0]][2]]
+            self.nodes[data_list[0]] = [True, 0, int(self.nodes[data_list[0]][2])+1, int(self.nodes[data_list[0]][2])]
             print("test")
         else:
-            self.nodes[data_list[0]] = [True, 0, 0, data_list[1]]
+            self.nodes[data_list[0]] = [True, 0, 0, int(data_list[1])]
 
     def increment_ttl(self):
         for node_key, node_value in self.nodes.items():
@@ -91,7 +92,7 @@ class HeartBeat():
                 if not node_key.startswith("test_"):
                     node_value[0] = False
                     node_value[2] = 0
-                    node_value[3] = None
+                    node_value[3] = 0
 
     def get_oldest_node(self):
         oldest_node = [self.name, self.get_age()];
@@ -118,3 +119,4 @@ class HeartBeat():
         else:
             print("The selected node does not exist");
             return False
+

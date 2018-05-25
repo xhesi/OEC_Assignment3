@@ -16,8 +16,8 @@ print("Using setting:",
 input()
 x = HeartBeat(
     name=current_hostname,
-    ip=current_ip,
-    broadcast=current_broadcast,
+    ip="",
+    broadcast="",
     port=50002,
     heartbeat_interval=2,
     ttl=2,
