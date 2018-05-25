@@ -1,7 +1,8 @@
 import socket
-import subprocess
 import platform
 import ipaddress
+import subprocess
+
 
 def get_network_info():
     hostname = socket.gethostname()

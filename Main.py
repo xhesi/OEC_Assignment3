@@ -1,9 +1,9 @@
 from HeartBeat import HeartBeat
 import NetworkInfo
 
-
+# Get Network Settings
 current_hostname, current_ip, current_broadcast = NetworkInfo.get_network_info()
-
+port = 50002
 print(
     "\n",
     "+-------------------------------+", "\n",
@@ -11,24 +11,26 @@ print(
     "+-------------------------------+", "\n",
     "| IP Address = ", current_ip, "\n",
     "| Broadcast  = ", current_broadcast, "\n",
-    "| Port       =  50002", "\n",
+    "| Port       = ", port, "\n",
     "+-------------------------------+", "\n"
       )
 current_ip = input('Press enter to start the node or enter an ip address manually:') or current_ip
-x = HeartBeat(
+
+# Initialize Node
+node = HeartBeat(
     name=current_hostname,
     ip=current_ip,
     broadcast=current_broadcast,
-    port=50002,
+    port=port,
     heartbeat_interval=2,
     ttl=2,
     debug=False
 )
+
+# Start Node
 print("Starting Node ...\n")
-x.start_receiving()
-x.start_sending()
-#input('Press enter to manually add node named TestNode:')
-#x.add_node("test_Node")
-#x.add_node("test_Node2", 15)
+node.start()
+
+# Stop Node
 input("Press enter to stop server:\n")
-x.stop()
+node.stop()
