@@ -105,7 +105,10 @@ class HeartBeat():
                     print(" |", node_key, "\t: Online")
                 else:
                     print(" |", node_key, "\t: Offline")
-            print(" +-------------------------------+")
+            print(" +-------------------------------+\n",
+                  "| Master: ", self.master, "\n",
+                  "+-------------------------------+"
+                  )
 
     def get_age(self):
         return self.nodes[self.name][2]
