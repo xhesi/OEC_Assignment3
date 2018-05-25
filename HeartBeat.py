@@ -6,7 +6,7 @@ from collections import Counter
 
 class HeartBeat():
 
-    def __init__(self, name, ip='127.0.0.1', broadcast='255.255.255.255', port=50007, heartbeat_interval=10, ttl=10, test=False):
+    def __init__(self, name, ip='127.0.0.1', broadcast='255.255.255.255', port=50007, heartbeat_interval=10, ttl=10, debug=False):
         threading.Thread.__init__(self)
         # Networking parameters
         self.ip = ip
@@ -17,11 +17,14 @@ class HeartBeat():
 
         # Socket initialisation
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        if self.current_platform == 'Windows':
-            self.serversocket.bind((self.ip, self.port))
-        elif self.current_platform == 'Linux':
-            self.serversocket.bind(("", self.port))
-
+        try:
+            if self.current_platform == 'Windows':
+                self.serversocket.bind((self.ip, self.port))
+            elif self.current_platform == 'Linux':
+                self.serversocket.bind(("", self.port))
+        except socket.gaierror:
+            print("Cannot start node with given IP Address")
+            exit(1)
         self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.clientsocket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.receiveThread = None
@@ -34,7 +37,7 @@ class HeartBeat():
         self.ttl = ttl
 
         self.master = self.name
-        self.test = test
+        self.debug = debug
         # Lists
         # Status, ttl, time-alive, self-reported-time-alive
         self.nodes = {self.name: [True, 0, 0, 0]}
@@ -88,8 +91,21 @@ class HeartBeat():
                 pass
 
     def print_status(self):
-        print(self.nodes)
-        print(self.master)
+        if self.debug is True:
+            print(self.nodes)
+            print(self.master)
+        else:
+            print("\n",
+                  "+-------------------------------+\n",
+                  "| Nodes                         |\n",
+                  "+-------------------------------+"
+                  )
+            for node_key, node_value in self.nodes.items():
+                if node_value[0] is True:
+                    print(" |", node_key, "\t: Online")
+                else:
+                    print(" |", node_key, "\t: Offline")
+            print(" +-------------------------------+")
 
     def get_age(self):
         return self.nodes[self.name][2]
