@@ -79,10 +79,10 @@ class HeartBeat():
     def parse_data(self, data):
         data_list = data.split(",")
         if data_list[0] in self.nodes:
-            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, self.nodes[data_list[0]][2]]
+            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, int(self.nodes[data_list[0]][2])]
             print("test")
         else:
-            self.nodes[data_list[0]] = [True, 0, 0, data_list[1]]
+            self.nodes[data_list[0]] = [True, 0, 0, int(data_list[1])]
 
     def increment_ttl(self):
         for node_key, node_value in self.nodes.items():
