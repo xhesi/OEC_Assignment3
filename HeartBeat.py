@@ -26,12 +26,12 @@ class HeartBeat():
         self.heartbeat_interval = heartbeat_interval
         self.name = name
         self.ttl = ttl
+
         self.master = self.name
-        self.nomination = self.name
         self.test = test
         # Lists
-        # Status, ttl, time-alive, nomination, master-election
-        self.nodes = {self.name: [True, 0, 0, self.nomination, self.master]}
+        # Status, ttl, time-alive, self-reported-time-alive
+        self.nodes = {self.name: [True, 0, 0, 0]}
 
     def stop(self):
         self.running = False
@@ -44,23 +44,17 @@ class HeartBeat():
     def send(self):
         while self.running:
             try:
-                self.nominate()
-                message = self.name + "," + self.get_oldest_node() + "," + self.nomination
+                message = self.name + "," + str(self.get_age())
                 self.clientsocket.sendto(message.encode(), (self.broadcast, self.port))
-                if self.test:
-                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50001))
-                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50002))
-                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50003))
-                    self.clientsocket.sendto(message.encode(), (self.broadcast, 50004))
                 time.sleep(self.heartbeat_interval)
                 # TODO: Move this code somewhere else
                 self.increment_ttl()
-
-                self.elect_master()
+                self.master = self.get_oldest_node()
                 print(self.nodes)
                 print(self.master)
             except Exception as e:
                 print(e)
+                self.stop()
 
     def start_receiving(self):
         self.receiveThread = threading.Thread(target=self.receive)
@@ -79,58 +73,43 @@ class HeartBeat():
             except:
                 pass
 
+    def get_age(self):
+        return self.nodes[self.name][2]
+
     def parse_data(self, data):
-        data_list=data.split(",")
+        data_list = data.split(",")
         if data_list[0] in self.nodes:
-            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, data_list[1], data_list[2]]
+            self.nodes[data_list[0]] = [True, 0, self.nodes[data_list[0]][2]+1, self.nodes[data_list[0]][2]]
+            print("test")
         else:
-            self.nodes[data_list[0]] = [True, 0, 0, data_list[1], data_list[2]]
+            self.nodes[data_list[0]] = [True, 0, 0, data_list[1]]
 
     def increment_ttl(self):
         for node_key, node_value in self.nodes.items():
             node_value[1] = node_value[1]+1
             if node_value[1] > self.ttl:
-                node_value[0] = False
-                node_value[2] = 0
-                node_value[3] = None
+                if not node_key.startswith("test_"):
+                    node_value[0] = False
+                    node_value[2] = 0
+                    node_value[3] = None
 
     def get_oldest_node(self):
-        oldest_node = [self.name, 0];
+        oldest_node = [self.name, self.get_age()];
         for node_key, node_value in self.nodes.items():
             if node_key == self.name:
                 continue
-            elif node_value[2] > oldest_node[1]:
-                oldest_node = [node_key, node_value[2]]
+            elif node_value[3] > oldest_node[1]:
+                oldest_node = [node_key, node_value[3]]
         return oldest_node[0]
 
-    def nominate(self):
-        if len(self.nodes) > 2:
-            value = Counter([row[3] for row in self.nodes.values()][1:]).most_common(1)
-            if value[0][0] is None:
-                self.nomination = self.name;
-            else:
-                self.nomination = value[0][0];
-        elif len(self.nodes) == 2:
-                tmp = list(self.nodes.values())[1][3]
-                if tmp is not None:
-                    self.nomination = tmp
-                else:
-                    self.nomination = self.name
-
-    def elect_master(self):
-        if len(self.nodes) > 1:
-            value = Counter([row[4] for row in self.nodes.values()]).most_common(1)
-            if value[0][0] is not None:
-                self.master = value[0][0];
-
-
-    def add_node(self, name):
+    def add_node(self, name, age=0):
         if name in self.nodes:
             print("The selected node already exists");
             return False
         else:
-            self.nodes[name] = [False, self.ttl+1, 0, None, None]
+            self.nodes[name] = [False, self.ttl+1, 0, age]
             return True
+
 
     def remove_node(self, name):
         if name in self.nodes:

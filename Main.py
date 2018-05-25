@@ -11,7 +11,7 @@ current_hostname, current_ip, current_broadcast = NetworkInfo.get_network_info()
 print("Using setting:",
     "\nip=", current_ip,
     "\nbroadcast=", current_broadcast,
-    "\nport=50004"
+    "\nport=50002"
       )
 input()
 x = HeartBeat(
@@ -27,6 +27,7 @@ print("Starting Node ...")
 x.start_receiving()
 x.start_sending()
 input('Press enter to manually add node named TestNode:')
-x.add_node("TestNode")
+x.add_node("test_Node")
+x.add_node("test_Node2", 15)
 input('Press enter to stop server:')
 x.stop()
