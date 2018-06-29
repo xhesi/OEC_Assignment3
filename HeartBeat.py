@@ -56,7 +56,11 @@ class HeartBeat:
         """ Set the node state to stopped, closes sockets, and stops the running threads. """
         self.running = False
         print('Exiting Program...')
-        self.clientsocket.sendto('exit'.encode(), (self.broadcast, self.port))
+        try:
+            self.clientsocket.sendto('exit'.encode(), (self.broadcast, self.port))
+        except Exception as e:
+                print("Client Socket: " + str(e))
+
         try:
             self.clientsocket.close()
         except Exception as e:
@@ -65,6 +69,7 @@ class HeartBeat:
             self.serversocket.close()
         except Exception as e:
                 print("Server Socket:" + str(e))
+        #raise Exception('Network interface is offline')
 
     def send(self):
         """ Broadcast the nodes own name and time-alive as a UDP message. Increments ttl of all nodes,

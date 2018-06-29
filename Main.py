@@ -1,5 +1,6 @@
 from HeartBeat import HeartBeat
 import NetworkInfo
+import time
 
 # Get Network Settings
 current_hostname, current_ip, current_broadcast = NetworkInfo.get_network_info()
@@ -15,9 +16,10 @@ print(
     "+-------------------------------+", "\n"
       )
 current_ip = input('Press enter to start the node or enter an ip address manually:') or current_ip
-
+continue_flag="continue"
 # Initialize Node
-node = HeartBeat(
+while continue_flag != "exit":
+  node = HeartBeat(
     name=current_hostname,
     ip=current_ip,
     broadcast=current_broadcast,
@@ -26,11 +28,17 @@ node = HeartBeat(
     ttl=2,
     debug=False
 )
-
-# Start Node
-print("Starting Node ...\n")
-node.start()
-
+## Start Node
+  print("Starting Node ...\n")
+#while continue_flag:
+  try:
+    node.start()
 # Stop Node
-input("Press enter to stop server:\n")
-node.stop()
+    continue_flag=input("Type exit and press enter to stop server:\n")
+#    continue_flag=False
+    node.stop()
+  except Exception as e:
+    print("Restarting program because interface is offline")
+    node.stop()
+    time.sleep(2)
+    
