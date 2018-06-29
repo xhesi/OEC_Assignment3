@@ -116,8 +116,12 @@ class HeartBeat:
         else:
             print("\n",
                   "+-------------------------------+\n",
-                  "| Nodes                         |\n",
-                  "+-------------------------------+"
+                  "| Current Node: ", self.name
+                  )
+
+            print(" +-------------------------------+\n",
+                  "| Nodes |                        \n",
+                  "+-------+"
                   )
             for node_key, node_value in self.nodes.items():
                 if node_value[0] is True:
